@@ -1,0 +1,21 @@
+# Keep original game assets, binaries, credentials and persistent accounts OUT of Git
+*.exe
+*.dll
+*.pak
+*.zip
+*.7z
+*.rar
+*.tar.gz
+*.sqlite*
+*.db
+*.log
+.env
+.env.*
+__pycache__/
+*.pyc
+Release/
+Game/
+Content/Paks/
+data/
+secrets/
+!.env.example

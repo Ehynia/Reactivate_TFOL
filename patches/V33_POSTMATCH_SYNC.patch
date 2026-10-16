@@ -1,0 +1,51 @@
+--- a/Release/Server/game_protocol.py
++++ b/Release/Server/game_protocol.py
+@@ -188,14 +188,24 @@
+    reply+=packet(38,'SyncBagData',dict(BagIndex=3,Count=len(new_items),Items=new_items))
+  elif command==159:
+   import round_drops
+-  round_drops.settle_context(database,uid,context,reason='logout')
++  settled=round_drops.settle_context(database,uid,context,reason='logout')
+   __import__('native_bots').cancel(context)
+   reply=packet(160,'LogoutInfoRes',dict(DailyBattleInfo=battle_statistics.daily(database,uid)))
++  if settled.get('state')=='awarded':
++   items=garage.bag(database,uid,3)
++   reply+=packet(38,'SyncBagData',dict(BagIndex=3,Count=len(items),Items=items))
+  elif command==165:
+   import round_drops
+-  round_drops.settle_context(database,uid,context,reason='exit_post_game')
++  # Result-less post-match exits are normal in the damaged OBT client.  A
++  # verified, sufficiently long round can still yield a consolation item.
++  # Sending ExitPostGameRes alone left the client with a stale bag even when
++  # the SQLite transaction had already committed the drop.
++  settled=round_drops.settle_context(database,uid,context,reason='exit_post_game')
+   __import__('native_bots').cancel(context)
+   reply=packet(166,'ExitPostGameRes',dict(Result='ok'))
++  if settled.get('state')=='awarded':
++   items=garage.bag(database,uid,3)
++   reply+=packet(38,'SyncBagData',dict(BagIndex=3,Count=len(items),Items=items))
+  elif command==5:
+   import accounts
+   try:accounts.rename_in_game(database,uid,values['Name']);code='ok'
+--- a/Release/Server/bridge_session.py
++++ b/Release/Server/bridge_session.py
+@@ -100,13 +100,17 @@
+             return 9, matchmaking.poll_response(state.database, decision, self.uid), False
+         if kind == 11 and body == b'R30A':
+             pending = self.context.pop('completion_pending', None)
+-            state.event('native_result_capture_aborted', uid=self.uid)
++            state.event('native_result_capture_aborted', uid=self.uid,
++                        reason='native_snapshot_not_received', completion_pending=bool(pending),
++                        battle_verified=False)
+             return 6, packet(177, 'TutorialBattleRes', dict(Exp=0, SilverCoin=0, Result='ok')) if pending else b'', False
+         if kind == 7:
+             try:
+                 response, details = battle_statistics.handle_snapshot(state.database, self.uid, body, self.context, local=state.config['mode']=='local')
+             except (ValueError, KeyError, UnicodeError, struct.error):
+-                state.event('native_result_rejected', uid=self.uid, reason='missing_or_invalid_OB15_snapshot')
++                state.event('native_result_rejected', uid=self.uid, reason='missing_or_invalid_OB15_snapshot',
++                            completion_pending=bool(self.context.get('completion_pending')),
++                            battle_verified=False)
+                 if self.context.pop('completion_pending', None):
+                     return 6, packet(177, 'TutorialBattleRes', dict(Exp=0, SilverCoin=0, Result='ok')), False
+                 return 127, struct.pack('<I', 2), False

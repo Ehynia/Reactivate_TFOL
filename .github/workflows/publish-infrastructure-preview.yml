@@ -1,0 +1,27 @@
+name: Publish infrastructure preview
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-infrastructure-preview.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package public infrastructure (no game assets)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          zip -q -r dist/tfol-infrastructure-v32.zip README.md .gitignore docs launcher server -x '*.exe' '*.dll' '*.pak' '*.db' '*.sqlite*' '*.env'
+          cd dist
+          sha256sum tfol-infrastructure-v32.zip > tfol-infrastructure-v32.zip.sha256
+      - name: Publish source-only preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view v32-infrastructure-preview >/dev/null 2>&1 || gh release create v32-infrastructure-preview --target "${GITHUB_SHA}" --title "v32 infrastructure preview (not a game build)" --notes "Source-only maintenance and updater infrastructure. No original UE4 game binaries, no deployable public gameplay, no launcher-update.zip."
+          gh release upload v32-infrastructure-preview dist/tfol-infrastructure-v32.zip dist/tfol-infrastructure-v32.zip.sha256 --clobber

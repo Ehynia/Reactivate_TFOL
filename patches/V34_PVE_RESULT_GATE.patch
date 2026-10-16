@@ -1,0 +1,36 @@
+--- a/Release/Server/game_protocol.py
++++ b/Release/Server/game_protocol.py
+@@ -223,13 +223,31 @@
+    reply+=packet(38,'SyncBagData',dict(BagIndex=3,Count=len(cards),Items=cards))
+    reply+=packet(62,'SyncPlayerInfo',dict(PlayerInfo=battle_statistics.player_info(database,uid)))
+  elif command==176:
++  # PvE uses the native PVEDEFEND route (mode 3001, map 2001).  Older
++  # versions cleared engine_match before checking which mode completed,
++  # which meant even a legitimate PVE result could never enter OB15 escrow.
++  # A client-declared mode alone is NOT enough evidence of a completed battle.
++  native_match=context.get('engine_match',{}) if context else {}
++  pve_report=values['Mode'] in ('PVE','PVEDEFEND')
++  pve_travel=(native_match.get('mode')==3001 and
++              native_match.get('state')=='travel_dispatched' and
++              bool(native_match.get('round_id')))
++  eligible_mode=(values['Mode']=='TDM' or (pve_report and pve_travel))
++  # The UI may time out waiting for OB15 and never send ExitPostGameReq.
++  # Settle already-verified participation independently of victory awards.
++  # This is limited by round_drops' persisted clock/identity/caps and does
++  # not invent a battle result, or modify UE4's WaitingPostMatch UI.
++  if pve_travel and local_rewards:
++   import round_drops
++   round_drops.settle_context(database,uid,context,reason='reported_pve_completion')
+   if context.get('native_bots'):__import__('native_bots').cancel(context)
+   import progression
+-  if context is not None and context.get('deferred_combat') and local_rewards and database.progression_enabled and values['Mode']=='TDM' and values['Match']==1:
++  if context is not None and context.get('deferred_combat') and local_rewards and database.progression_enabled and eligible_mode and values['Match']==1:
+    import uuid
+    # Duplicate completion must preserve the same result transaction identity.
+    if not context.get('completion_pending'):
+-    context['completion_pending']=dict(event_id='combat-'+uuid.uuid4().hex,created_at=time.time())
++    context['completion_pending']=dict(event_id='combat-'+uuid.uuid4().hex,created_at=time.time(),
++                                       mode='PVEDEFEND' if pve_report else 'TDM')
+    context.pop('completion_event',None)
+    return b'',dict(command=command,schema=schema,handler_implemented=True,transport_accepted=True,application_processed=True,request_values_logged=False,reward_status='awaiting_authenticated_OB15_snapshot')
+   if context is not None:context.pop('completion_pending',None)

@@ -1,0 +1,10 @@
+[Unit]
+Description=Check TFOL GitHub Releases without installing updates
+[Service]
+Type=oneshot
+User=tfol
+Group=tfol
+ExecStart=/usr/bin/python3 /opt/reactivate-tfol/server/check-updates.py
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true

@@ -1,0 +1,21 @@
+--- a/Release/Server/economy.py
++++ b/Release/Server/economy.py
+@@
+-    for index,skin in enumerate(garage.RESOURCES['skins'],len(result)):
+-        result.append(dict(Id=200000000+skin['category']*10000000+skin['resource_id'],SortId=index,Category=skin['category'],Index=skin['resource_id'],Count=1,Discount=100,PaymentOne=3,PriceOne=POLICY['skin_silver'],PaymentTwo=6,PriceTwo=POLICY['skin_tickets'],Tab=3,Leaf=0))
++    # Never advertise skins whose original base item is absent or of the
++    # wrong kind. Such offers always fail with invalidItemId during buy.
++    sources={r['resource_id']:r['kind'] for r in garage.RESOURCES['catalog']}
++    for skin in garage.RESOURCES['skins']:
++        expected=('character' if skin['category']==10 else ('main_weapon','melee_weapon'))
++        actual=sources.get(skin['base_id'])
++        if actual not in ((expected,) if isinstance(expected,str) else expected):
++            continue
++        result.append(dict(Id=200000000+skin['category']*10000000+skin['resource_id'],SortId=len(result),Category=skin['category'],Index=skin['resource_id'],Count=1,Discount=100,PaymentOne=3,PriceOne=POLICY['skin_silver'],PaymentTwo=6,PriceTwo=POLICY['skin_tickets'],Tab=3,Leaf=0))
+--- a/Release/Server/round_end_ui45.h
++++ b/Release/Server/round_end_ui45.h
+@@
+ #else
++/* stop_worker() also resets this field when built for LOCAL_HOST_TEST. */
++static U ui_end_sent_sequence;
+ static void round_end_ui_report45(U outcome){(void)outcome;}

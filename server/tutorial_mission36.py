@@ -26,9 +26,16 @@ def poll(database,uid,context,now):
         context['megatron_tutorial36']=step
     if step['phase']!='pending' or now<step['deadline']:return b''
     if context.get('engine_match'):return b''
-    from native_bots import selected,COMMAND
+    from native_bots import COMMAND
     from tdr_codec import HEAD
-    hero=selected(database,uid)
+    # The original story tutorial uses Optimus Prime ID 15 independently
+    # of the selected garage hero. Never change the normal loadout.
+    with database.connect() as c:
+        owned=c.execute('SELECT 1 FROM characters WHERE uid=? AND resource_id=15',(uid,)).fetchone()
+    if not owned:
+        step['phase']='missing_tutorial_hero'
+        return b''
+    hero=15
     sequence=context.get('engine_sequence',0)+1
     context['engine_sequence']=sequence
     context['engine_match']=dict(state='travel_requested',action=ACTION,map=MAP_ID,

@@ -1,46 +1,40 @@
-"""Queue the ORIGINAL OBT Megatron tutorial via an existing native engine job.
+"""OBT33 v41: original ONCE-ONLY tutorial on first account login.
 
-Requires a registered local account and a bridge capable of OB27.
-Does not synthesize a boss or mark the tutorial completed.
+The native OnMSG_LOGIN_DATA_RES handler (OBT x86 0x7d0860) handles the
+first tutorial before constructing the lobby HUD. Return Result=badName
+with an empty PlayerInfo.Name and let original StartTutorialLevel run.
+
+Do not use the old deferred OB27 travel: it opened Tutorial_Scene AFTER
+the lobby and left menu widgets overlaid onto the mission.
 """
-import struct
 import accounts
 
 MAP_ID=1009
-ACTION=2
 PRIVATE_MODE=1004
-ARRIVAL_DELAY=8.0
+HERO_ID=15
 
 def tutorial_due(database,uid):
-    try:identity=accounts.identity(database,uid)
-    except ValueError:return False
-    return identity['tutorial_required']==1 and identity['tutorial_completed_at'] is None
+    try:
+        identity=accounts.identity(database,uid)
+    except ValueError:
+        return False
+    # One-time UI gate. Authoritative mission success is recorded separately,
+    # never forged by map travel, menu exit or nickname creation.
+    return bool(identity['tutorial_required'] and not identity['nickname_set']
+                and identity['tutorial_completed_at'] is None)
+
+def login_state(database,uid,context):
+    needed=tutorial_due(database,uid)
+    if needed:
+        context['original_tutorial_login41']=dict(state='native_login_pending',
+            map=MAP_ID,mode=PRIVATE_MODE,hero=HERO_ID)
+        context.pop('megatron_tutorial36',None)
+        context.pop('engine_match',None)
+    else:
+        context.pop('original_tutorial_login41',None)
+        context.pop('megatron_tutorial36',None)
+    return needed
 
 def poll(database,uid,context,now):
-    if not (context.get('native_bots') and context.get('logged_in')
-            and context.get('allow_local_rewards')):return b''
-    step=context.get('megatron_tutorial36')
-    if step is None:
-        step={'phase':'pending' if tutorial_due(database,uid) else 'not_required',
-              'deadline':now+ARRIVAL_DELAY}
-        context['megatron_tutorial36']=step
-    if step['phase']!='pending' or now<step['deadline']:return b''
-    if context.get('engine_match'):return b''
-    from native_bots import COMMAND
-    from tdr_codec import HEAD
-    # The original story tutorial uses Optimus Prime ID 15 independently
-    # of the selected garage hero. Never change the normal loadout.
-    with database.connect() as c:
-        owned=c.execute('SELECT 1 FROM characters WHERE uid=? AND resource_id=15',(uid,)).fetchone()
-    if not owned:
-        step['phase']='missing_tutorial_hero'
-        return b''
-    hero=15
-    sequence=context.get('engine_sequence',0)+1
-    context['engine_sequence']=sequence
-    context['engine_match']=dict(state='travel_requested',action=ACTION,map=MAP_ID,
-       mode=PRIVATE_MODE,bots=0,hero=hero,sequence=sequence,round_id=None,
-       tutorial_original=True,dispatch_deadline=now+20)
-    step['phase']='travel_requested'
-    body=struct.pack('<4s6I',b'OB27',sequence,ACTION,MAP_ID,hero,0,PRIVATE_MODE)
-    return HEAD.pack(1,COMMAND,12,len(body))+body
+    # Delayed OB27 launch deliberately retired; native login owns the level.
+    return b''

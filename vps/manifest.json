@@ -2,7 +2,7 @@
   "schema": 1,
   "repository": "Ehynia/Reactivate_TFOL",
   "release": "v56.2",
-  "git_ref": "8777168ce61d1b1003bdb3583f4b61d33186aefc",
+  "git_ref": "f424736a4ae4090096cfb958b1546fefb6026063",
   "asset": "vps/packages/tfol-server-v56.2.tar.gz",
   "sha256": "c43ee7dec8b5934d964a61ec8a6b55d39fe8f46c097e032da273447d56883661",
   "mode": "hosted-preparation",

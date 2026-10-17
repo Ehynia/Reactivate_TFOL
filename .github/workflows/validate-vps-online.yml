@@ -1,0 +1,73 @@
+name: Validate VPS online installer
+
+on:
+  push:
+    paths:
+      - "vps/**"
+      - ".github/workflows/validate-vps-online.yml"
+  pull_request:
+    paths:
+      - "vps/**"
+      - ".github/workflows/validate-vps-online.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check shell and Python syntax
+        run: |
+          bash -n vps/install-online.sh vps/install.sh
+          python3 -m py_compile vps/check-online-updates.py vps/check-updates.py
+      - name: Verify pinned GitHub package checksum, path and safe archive members
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,pathlib,re,tarfile
+          m=json.loads(pathlib.Path('vps/manifest.json').read_text())
+          assert m['repository']=='Ehynia/Reactivate_TFOL' and m['mode']=='hosted-preparation'
+          assert re.fullmatch(r'[a-f0-9]{64}',m['sha256'])
+          p=pathlib.Path(m['asset'])
+          assert p.is_file() and p.name=='tfol-server-'+m['release']+'.tar.gz'
+          assert hashlib.sha256(p.read_bytes()).hexdigest()==m['sha256']
+          with tarfile.open(p,'r:gz') as tf:
+              entries=set()
+              for x in tf:
+                  path=pathlib.PurePosixPath(x.name)
+                  assert not path.is_absolute() and '..' not in path.parts
+                  assert x.isfile() or x.isdir()
+                  assert path.parts[0] in ('server','deploy')
+                  assert not x.name.lower().endswith(('.exe','.dll','.pak','.db','.sqlite','.key','.pem'))
+                  entries.add(x.name)
+              assert {'server/server.py','server/runtime_config.py','deploy/tfol.service'}<=entries
+          print('Package and SHA256 verified')
+          PY
+      - name: Hosted preparation smoke test (no public ports)
+        run: |
+          mkdir -p /tmp/tfol-smoke
+          tar -xzf vps/packages/tfol-server-v56.2.tar.gz -C /tmp/tfol-smoke
+          cd /tmp/tfol-smoke/server
+          python3 - <<'PY'
+          import json,tempfile,urllib.request
+          from pathlib import Path
+          from server import App
+          with tempfile.TemporaryDirectory() as folder:
+              from runtime_config import load
+              cfg=dict(mode='hosted-preparation',require_account_keys=True,capture_packets=False,
+                       api_port=0,tcp_port=0,local_test_matches=False,reddit_news_enabled=False,
+                       enable_local_banner_xp=False)
+              with tempfile.NamedTemporaryFile(mode='w',suffix='.json') as temp:
+                  json.dump(cfg,temp);temp.flush()
+                  app=App(Path(folder),0,0,config=load(temp.name)).start()
+                  try:
+                      assert app.http.server_address[0]=='127.0.0.1'
+                      assert app.tcp.server_address[0]=='127.0.0.1'
+                      with urllib.request.urlopen('http://127.0.0.1:'+str(app.api_port)+'/health',timeout=5) as r:
+                          result=json.load(r)
+                      assert result['gameplay_verified'] is False
+                  finally:
+                      app.close()
+          print('Hosted-preparation TCP/HTTP smoke test passed')
+          PY

@@ -66,10 +66,10 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           Expand-Archive -Path 'dist/Reactivate_TFOL_Demo_0_1_Start_Game.zip' -DestinationPath 'unpacked' -Force
-          $src = 'unpacked/Release/Server/LauncherSource/ReactivateStandalone.cs'
+          $src = (Resolve-Path 'unpacked/Release/Server/LauncherSource/ReactivateStandalone.cs').Path
           $compiler = Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
           if (!(Test-Path $compiler)) { throw 'Windows .NET Framework C# compiler missing' }
-          & $compiler /nologo /target:winexe /out:checked-launcher.exe /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Core.dll /r:System.Runtime.Serialization.dll $src
+          & $compiler /nologo /target:winexe /out:checked-launcher.exe /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Core.dll /r:System.Runtime.Serialization.dll "$src"
           if ($LASTEXITCODE -ne 0 -or !(Test-Path checked-launcher.exe)) { throw 'WinForms launcher failed to compile' }
           Write-Host 'UI v57 compiles successfully on Windows; live gameplay test still required.'
   publish:

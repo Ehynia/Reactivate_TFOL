@@ -75,11 +75,21 @@ echo "[TFOL] Archive verified. Installing systemd service (loopback-only)..."
 bash "$TMPDIR_INSTALL/install.sh" --archive "$TMPDIR_INSTALL/server.tar.gz" --sha256 "$EXPECTED_SHA"
 
 # The update checker is read-only. Updates are applied by re-running this installer.
-download "${RAW}/${PIN}/vps/check-updates.py" "$TMPDIR_INSTALL/check-updates.py"
+download "${RAW}/${PIN}/vps/check-online-updates.py" "$TMPDIR_INSTALL/check-updates.py"
 install -m 0644 -o root -g root "$TMPDIR_INSTALL/check-updates.py" \
   /opt/reactivate-tfol/server/check-updates.py
 printf '%s\n' "$TAG" > /opt/reactivate-tfol/installed_tag
 chmod 0644 /opt/reactivate-tfol/installed_tag
+printf '%s\n' "$EXPECTED_SHA" > /opt/reactivate-tfol/installed_sha256
+chmod 0644 /opt/reactivate-tfol/installed_sha256
+
+# Daily update notifications, never automatic replacement.
+download "${RAW}/${PIN}/vps/tfol-update-check.service" "$TMPDIR_INSTALL/update.service"
+download "${RAW}/${PIN}/vps/tfol-update-check.timer" "$TMPDIR_INSTALL/update.timer"
+install -m 0644 "$TMPDIR_INSTALL/update.service" /etc/systemd/system/tfol-update-check.service
+install -m 0644 "$TMPDIR_INSTALL/update.timer" /etc/systemd/system/tfol-update-check.timer
+systemctl daemon-reload
+systemctl enable --now tfol-update-check.timer
 
 echo "[TFOL] Completed. View service: systemctl status tfol-server"
 echo "[TFOL] Check localhost health: curl http://127.0.0.1:28000/health"

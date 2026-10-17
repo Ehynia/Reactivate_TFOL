@@ -1,0 +1,124 @@
+name: Publish verified Demo 0.1 and retire superseded releases
+on:
+  push:
+    paths:
+      - ".github/workflows/publish-demo-0-1-verified.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: publish-demo-0-1
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Obtain existing Demo archive (do not depend on quarantined Drive copy)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist/input
+          gh release download demo-0.1 --repo "$GITHUB_REPOSITORY" \
+            --pattern "Reactivate_TFOL_Demo_0_1_Start_Game.zip" --dir dist/input
+          echo "5ac3a14b268876622bc79f48aefa5fa2b2947853ea64aba5aaa682be1e11e25d  dist/input/Reactivate_TFOL_Demo_0_1_Start_Game.zip" | sha256sum -c -
+      - name: Rebuild exact reviewed clean archive and verify byte-for-byte SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile, copy, hashlib
+          src=Path('dist/input/Reactivate_TFOL_Demo_0_1_Start_Game.zip')
+          out=Path('dist/Reactivate_TFOL_Demo_0_1_LAUNCHER_RECHECKED_FULL.zip')
+          garbage={'Release/Server/cceONx1i.s','Release/Server/ccsDrH6w.s'}
+          with zipfile.ZipFile(src,'r') as original, zipfile.ZipFile(out,'w') as clean:
+              files=original.infolist()
+              assert len(files)==407
+              assert garbage <= {x.filename for x in files}
+              for info in files:
+                  if info.filename in garbage:
+                      continue
+                  name=Path(info.filename)
+                  assert not name.is_absolute() and '..' not in name.parts, name
+                  assert not info.filename.lower().endswith(('.db','.sqlite','.sqlite3','.pem','.key','.env')), name
+                  item=copy.copy(info)
+                  item._compresslevel=7
+                  clean.writestr(item,original.read(info.filename))
+          with zipfile.ZipFile(out) as final:
+              assert len(final.namelist())==405
+              assert final.testzip() is None
+              assert 'Release/Start Game.exe' in final.namelist()
+              assert 'Release/Reactivate.exe' in final.namelist()
+              assert 'Release/Server/server.py' in final.namelist()
+          expected='77fa467d0349fdcf6bc06d1a743955e283eec6bc3dc500db70e98f172b6ae2f7'
+          digest=hashlib.sha256(out.read_bytes()).hexdigest()
+          assert digest==expected,(digest,expected)
+          print('Reviewed Demo ZIP exact SHA-256 verified:',digest)
+          PY
+          (cd dist && sha256sum Reactivate_TFOL_Demo_0_1_LAUNCHER_RECHECKED_FULL.zip > Reactivate_TFOL_Demo_0_1_LAUNCHER_RECHECKED_FULL.zip.sha256)
+      - name: Upload verified new assets, leaving old ones until success
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release upload demo-0.1 \
+            dist/Reactivate_TFOL_Demo_0_1_LAUNCHER_RECHECKED_FULL.zip \
+            dist/Reactivate_TFOL_Demo_0_1_LAUNCHER_RECHECKED_FULL.zip.sha256 \
+            --repo "$GITHUB_REPOSITORY" --clobber
+          name="Reactivate_TFOL_Demo_0_1_LAUNCHER_RECHECKED_FULL.zip"
+          actual="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/demo-0.1" \
+             --jq ".assets[] | select(.name==\"$name\") | .digest")"
+          test "$actual" = "sha256:77fa467d0349fdcf6bc06d1a743955e283eec6bc3dc500db70e98f172b6ae2f7"
+      - name: Update public release notes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > dist/RELEASE_NOTES.md <<'EOF'
+          # Reactivate TFOL — Demo 0.1 (launcher rechecked)
+          
+          - Run `Release/Start Game.exe`. It loads the up-to-date launcher bootstrap/UI v57 instead of the obsolete UI v21.
+          - Includes account-creation/read-permission hotfix for blocked `Content/Bytes/bytes_for_bothside/RoleTable.bytes`, and GitHub TLS 1.2 update-check handling.
+          - Local Test Node, language resources and server Python sources included; original full TFOL game PAKs are **not** included. Select an existing TFOL installation.
+          - Archive cleaned of two temporary assembler `.s` files; no account databases or user passwords included.
+          - **SHA-256:** `77fa467d0349fdcf6bc06d1a743955e283eec6bc3dc500db70e98f172b6ae2f7`. A matching `.sha256` asset is included.
+          - Before upgrade, back up `OBT_SERVER_DATA`. Do not overwrite user game saves.
+          - Native OB15, full original tutorial, PvE and remote gameplay are incomplete.
+          - Python integration checks and archive integrity were run; end-to-end Windows gameplay is **not** certified.
+          
+          This is a community reconstruction demo, not an official Transformers Online release.
+          EOF
+          gh release edit demo-0.1 --repo "$GITHUB_REPOSITORY" \
+            --title "Demo 0.1 — Launcher Rechecked" --notes-file dist/RELEASE_NOTES.md --prerelease
+      - name: Remove superseded Demo files and old infrastructure preview
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for old in Reactivate_TFOL_Demo_0_1_Start_Game.zip Reactivate_TFOL_Demo_0_1_Start_Game.zip.sha256; do
+            id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/demo-0.1" \
+                  --jq ".assets[] | select(.name==\"$old\") | .id")"
+            if [ -n "$id" ]; then
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$id" >/dev/null
+              echo "Removed superseded asset: $old"
+            fi
+          done
+          if gh release view v32-infrastructure-preview --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release delete v32-infrastructure-preview --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+          fi
+      - name: Verify final public release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release view demo-0.1 --repo "$GITHUB_REPOSITORY" \
+            --json tagName,name,isPrerelease,assets,url \
+            --jq '{tag:.tagName,title:.name,prerelease:.isPrerelease,url,assets:[.assets[].name]}'
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/demo-0.1" --jq '.assets | length')" -eq 2
+          ! gh release view v32-infrastructure-preview --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1

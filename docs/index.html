@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080c14">
+  <meta name="description" content="Reactivate TFOL — фанатский проект восстановления Transformers Online. Ход разработки, документация, новости и GitHub Releases.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Reactivate TFOL — Transformers Online">
+  <meta property="og:description" content="Community restoration project. Development updates, documentation and future releases.">
+  <meta property="og:image" content="assets/hero.webp">
+  <title>Reactivate TFOL — Transformers Online Community Revival</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="skip">К содержимому</a>
+  <div class="scroll-progress" aria-hidden="true"></div>
+  <header class="site-header" id="top">
+    <div class="header-inner container">
+      <a class="brand" href="#top" aria-label="Reactivate TFOL, на главную">
+        <span class="brand-mark" aria-hidden="true"><span>R</span></span>
+        <span class="brand-copy"><strong>REACTIVATE<span>TFOL</span></strong><small>TRANSFORMERS ONLINE <em>·</em> COMMUNITY PROJECT</small></span>
+      </a>
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a href="#about" data-i18n="navAbout">О ПРОЕКТЕ</a>
+        <a href="#characters" data-i18n="navCharacters">ПЕРСОНАЖИ</a>
+        <a href="#roadmap" data-i18n="navProgress">РАЗРАБОТКА</a>
+        <a href="#download" data-i18n="navDownload">ЗАГРУЗКИ</a>
+      </nav>
+      <div class="header-actions">
+        <div class="lang-switch" role="group" aria-label="Language"><button type="button" class="is-active" data-lang="ru" aria-pressed="true">RU</button><span>/</span><button type="button" data-lang="en" aria-pressed="false">EN</button></div>
+        <a class="header-github" href="https://github.com/Ehynia/Reactivate_TFOL" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .8a11.2 11.2 0 0 0-3.54 21.82c.56.11.76-.24.76-.54v-2.1c-3.1.67-3.75-1.31-3.75-1.31-.51-1.28-1.24-1.62-1.24-1.62-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.14 1.71 1.14.99 1.7 2.61 1.21 3.25.92.1-.72.39-1.21.71-1.49-2.48-.29-5.09-1.24-5.09-5.53 0-1.22.44-2.22 1.15-3-.12-.29-.5-1.42.11-2.96 0 0 .94-.3 3.08 1.15A10.65 10.65 0 0 1 12 6.3c.95 0 1.9.13 2.8.38 2.14-1.45 3.07-1.15 3.07-1.15.61 1.54.23 2.67.11 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.61 5.24-5.1 5.53.4.35.76 1.04.76 2.09v2.97c0 .3.2.65.77.54A11.2 11.2 0 0 0 12 .8Z"/></svg></a>
+        <button type="button" class="menu-toggle" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobile-menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+    <nav class="mobile-nav" id="mobile-menu" aria-label="Mobile navigation" hidden>
+      <a href="#about" data-i18n="navAbout">О ПРОЕКТЕ</a><a href="#characters" data-i18n="navCharacters">ПЕРСОНАЖИ</a><a href="#roadmap" data-i18n="navProgress">РАЗРАБОТКА</a><a href="#download" data-i18n="navDownload">ЗАГРУЗКИ</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-image" aria-hidden="true"></div><div class="hero-vignette" aria-hidden="true"></div>
+      <div class="hero-grid" aria-hidden="true"></div>
+      <div class="container hero-content">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="pulse-dot"></span><span data-i18n="heroEyebrow">НЕЗАВИСИМЫЙ ФАНАТСКИЙ ПРОЕКТ</span><span class="eyebrow-line"></span><span>EST. 2026</span></div>
+          <div class="hero-pretitle">TRANSFORMERS <b>ONLINE</b></div>
+          <h1 id="hero-title"><span data-i18n="heroTitle1">ЛЕГЕНДА</span><br><span class="title-gradient" data-i18n="heroTitle2">ВОЗВРАЩАЕТСЯ</span><span class="period">.</span></h1>
+          <p class="hero-description" data-i18n="heroDesc">Сообщество работает над восстановлением Transformers Online: исследует оригинальный клиент, развивает серверные инструменты и возвращает забытые игровые системы.</p>
+          <div class="hero-buttons">
+            <a class="button button-primary" href="#download"><span data-i18n="heroCta">ПРОВЕРИТЬ РЕЛИЗЫ</span><span class="button-arrow" aria-hidden="true">↗</span></a>
+            <a class="button button-ghost" href="#about"><span data-i18n="learnMore">О ПРОЕКТЕ</span><span aria-hidden="true">↓</span></a>
+          </div>
+          <p class="hero-caption"><span class="mini-status"></span><span data-i18n="heroStatus">В разработке · Публичная сборка не выпущена</span></p>
+        </div>
+        <div class="hero-side-note" aria-hidden="true"><span>01 <span class="muted">/</span> 04</span><span class="vertical-line"></span><span>THE REACTIVATION PROJECT</span></div>
+      </div>
+      <div class="hero-bottom"><div class="container hero-bottom-inner"><span>TFOL <span class="muted">//</span> REACTIVATE</span><span class="scan-text" data-i18n="heroBottom">СОХРАНИТЬ ИСТОРИЮ. ВОССТАНОВИТЬ ИГРУ.</span><a href="#about" aria-label="Scroll to about">SCROLL <span>↓</span></a></div></div>
+    </section>
+
+    <section class="stats" aria-label="Project details"><div class="container stats-grid">
+      <div class="stat"><span class="stat-icon">◈</span><div><strong>UE4</strong><small data-i18n="statEngine">ОРИГИНАЛЬНЫЙ ДВИЖОК</small></div></div>
+      <div class="stat"><span class="stat-icon">◇</span><div><strong>RU / EN</strong><small data-i18n="statLanguages">ПОДДЕРЖКА ЛОКАЛИЗАЦИИ</small></div></div>
+      <div class="stat"><span class="stat-icon">⬡</span><div><strong>OPEN SOURCE</strong><small data-i18n="statRepo">ОТКРЫТЫЕ ИНСТРУМЕНТЫ</small></div></div>
+      <div class="stat"><span class="stat-icon">⌁</span><div><strong>IN PROGRESS</strong><small data-i18n="statStatus">СТАТУС РАЗРАБОТКИ</small></div></div>
+    </div></section>
+
+    <section class="section about-section" id="about"><div class="container">
+      <div class="section-header reveal"><div><p class="section-kicker"><span>01</span> / <span data-i18n="aboutEyebrow">О ПРОЕКТЕ</span></p><h2 data-i18n="aboutTitle">ИСТОРИЯ ЕЩЁ <em>НЕ ЗАКОНЧЕНА.</em></h2></div><p class="section-side" data-i18n="aboutSide">Наша цель — сохранить и исследовать игру, которую помнит сообщество.</p></div>
+      <div class="about-layout">
+        <div class="about-visual reveal"><div class="technical-corner top-left"></div><div class="technical-corner bottom-right"></div><div class="visual-glow"></div><span class="image-caption"><span>01 //</span> TRANSFORMERS ONLINE</span></div>
+        <div class="about-details reveal"><span class="small-tag" data-i18n="communityDriven">СИЛАМИ СООБЩЕСТВА</span><h3 data-i18n="aboutHeading">РЕАКТИВАЦИЯ, А НЕ ОБЕЩАНИЕ РЕЛИЗА</h3><p data-i18n="aboutText1">Reactivate TFOL — независимый проект исследования и восстановления сетевых механизмов Transformers Online. Мы работаем с инструментами запуска, серверной логикой и совместимостью оригинального клиента.</p><p data-i18n="aboutText2">Это не официальный проект и не полноценная публичная игра. На GitHub публикуются исходники, технические заметки и проверяемые изменения. Состояние функций честно отражено в документации.</p>
+          <div class="check-list"><div><i>✓</i><span data-i18n="aboutPoint1">Документация и история разработки</span></div><div><i>✓</i><span data-i18n="aboutPoint2">Работа над сервером и лаунчером</span></div><div><i>✓</i><span data-i18n="aboutPoint3">Исследование интерфейса и локализации</span></div></div>
+          <a class="text-link" href="https://github.com/Ehynia/Reactivate_TFOL#readme" target="_blank" rel="noopener noreferrer"><span data-i18n="viewSource">ИЗУЧИТЬ ИСХОДНЫЙ КОД</span> <span>↗</span></a>
+        </div>
+      </div>
+    </div></section>
+
+    <section class="section character-section" id="characters"><div class="container">
+      <div class="section-header reveal"><div><p class="section-kicker"><span>02</span> / <span data-i18n="charactersEyebrow">ВСЕЛЕННАЯ</span></p><h2 data-i18n="charactersTitle">ДВЕ СТОРОНЫ. <em>ОДНА ЛЕГЕНДА.</em></h2></div><p class="section-side" data-i18n="charactersSide">Герои знакомого мира — визуальный символ проекта.</p></div>
+      <div class="character-grid">
+        <article class="character-card card-optimus reveal"><div class="character-art"><img loading="lazy" src="assets/optimus.webp" alt="Optimus Prime — Transformers artwork"></div><div class="character-overlay"><div class="faction-name"><span class="faction-logo">◆</span> AUTOBOTS</div><div class="character-meta"><span>01 / CYBERTRON</span><h3>OPTIMUS<br>PRIME</h3><p data-i18n="optimusCaption">Символ решимости и надежды.</p></div></div></article>
+        <article class="character-card card-arcee reveal"><div class="character-art"><img loading="lazy" src="assets/arcee.webp" alt="Arcee — Transformers artwork"></div><div class="character-overlay"><div class="faction-name"><span class="faction-logo">◆</span> AUTOBOTS</div><div class="character-meta"><span>02 / CYBERTRON</span><h3>ARCEE</h3><p data-i18n="arceeCaption">Скорость, точность и характер.</p></div></div></article>
+        <div class="character-message reveal"><span class="character-message-index">THE LEGACY CONTINUES //</span><div class="large-star" aria-hidden="true">✳</div><p data-i18n="characterMessage">Каждый персонаж — часть мира, который стоит сохранить.</p><a href="https://github.com/Ehynia/Reactivate_TFOL/tree/main/docs" target="_blank" rel="noopener noreferrer" class="text-link"><span data-i18n="exploreDocs">ТЕХНИЧЕСКИЕ ЗАМЕТКИ</span> ↗</a></div>
+      </div>
+    </div></section>
+
+    <section class="section roadmap-section" id="roadmap"><div class="container">
+      <div class="section-header reveal"><div><p class="section-kicker"><span>03</span> / <span data-i18n="progressEyebrow">ДНЕВНИК РАЗРАБОТКИ</span></p><h2 data-i18n="progressTitle">ШАГ ЗА <em>ШАГОМ.</em></h2></div><p class="section-side" data-i18n="progressSide">Реальные исследовательские этапы из репозитория. Не являются игровыми релизами.</p></div>
+      <div class="timeline">
+        <a class="timeline-item reveal" target="_blank" rel="noopener noreferrer" href="https://github.com/Ehynia/Reactivate_TFOL/blob/main/docs/OBT33_V50_SPARK_MENU_RECOVERY_RU.md"><div class="timeline-id"><span>50</span><small>OBT33</small></div><div class="timeline-content"><div class="timeline-label"><span class="status-pill"><span class="dot"></span><span data-i18n="timelineResearch">ТЕХНИЧЕСКИЙ ЭТАП</span></span><time>V50</time></div><h3 data-i18n="timeline50Title">ВОССТАНОВЛЕНИЕ МЕНЮ ИСКР</h3><p data-i18n="timeline50Desc">Серверные слоты, предметы и схемы. Клиентская интеграция ещё требует проверки.</p></div><span class="timeline-arrow" aria-hidden="true">↗</span></a>
+        <a class="timeline-item reveal" target="_blank" rel="noopener noreferrer" href="https://github.com/Ehynia/Reactivate_TFOL/blob/main/docs/OBT33_V48_LAUNCHER_TRANSLATION_SKIN_RU.md"><div class="timeline-id"><span>48</span><small>OBT33</small></div><div class="timeline-content"><div class="timeline-label"><span class="status-pill"><span class="dot"></span><span data-i18n="timelineResearch">ТЕХНИЧЕСКИЙ ЭТАП</span></span><time>V48</time></div><h3 data-i18n="timeline48Title">ЛАУНЧЕР И ЛОКАЛИЗАЦИЯ</h3><p data-i18n="timeline48Desc">Работа с языковыми ресурсами, интерфейсом лаунчера и отображением скинов.</p></div><span class="timeline-arrow" aria-hidden="true">↗</span></a>
+        <a class="timeline-item reveal" target="_blank" rel="noopener noreferrer" href="https://github.com/Ehynia/Reactivate_TFOL/tree/main/launcher"><div class="timeline-id"><span>DEV</span><small>TOOLS</small></div><div class="timeline-content"><div class="timeline-label"><span class="status-pill status-outline" data-i18n="timelineInProgress">В РАЗРАБОТКЕ</span><time data-i18n="ongoing">ПОСТОЯННО</time></div><h3 data-i18n="timelineDevTitle">ИНСТРУМЕНТЫ И ОБНОВЛЕНИЯ</h3><p data-i18n="timelineDevDesc">Средства запуска, проверки обновлений и безопасной работы с файлами.</p></div><span class="timeline-arrow" aria-hidden="true">↗</span></a>
+      </div>
+      <a href="https://github.com/Ehynia/Reactivate_TFOL/tree/main/docs" target="_blank" rel="noopener noreferrer" class="button button-secondary"><span data-i18n="allReports">ВСЯ ДОКУМЕНТАЦИЯ</span><span>↗</span></a>
+    </div></section>
+
+    <section class="download-section" id="download"><div class="download-background" aria-hidden="true"></div><div class="container download-inner">
+      <div class="download-heading reveal"><p class="section-kicker"><span>04</span> / <span data-i18n="navDownload">ЗАГРУЗКИ</span></p><h2 data-i18n="downloadTitle">ГОТОВ К <em>ВОЗВРАЩЕНИЮ?</em></h2><p data-i18n="downloadSubtitle">Следи за прогрессом восстановления. Скачивай только официально опубликованные файлы проекта с подтверждёнными контрольными суммами.</p></div>
+      <div class="download-panel reveal"><div class="download-panel-main"><div class="download-state"><span class="glow-indicator"></span><span data-i18n="releaseStatus">ПУБЛИЧНАЯ СБОРКА: ЕЩЁ НЕТ</span></div><h3 data-i18n="downloadCardTitle">РЕЛИЗ ПОКА НЕ ОПУБЛИКОВАН</h3><p data-i18n="downloadCardDesc">Репозиторий содержит исходный код и технические материалы. Полноценный публичный игровой клиент и готовый сервер сейчас не заявлены.</p><div class="download-actions"><a class="button button-primary" href="https://github.com/Ehynia/Reactivate_TFOL/releases" target="_blank" rel="noopener noreferrer"><span data-i18n="openReleases">ПРОВЕРИТЬ GITHUB RELEASES</span><span>↗</span></a><a class="button button-ghost" href="https://github.com/Ehynia/Reactivate_TFOL" target="_blank" rel="noopener noreferrer"><span data-i18n="openGithub">ОТКРЫТЬ GITHUB</span><span>↗</span></a></div></div><aside class="download-aside"><span class="aside-label" data-i18n="beforeYouDownload">ПЕРЕД УСТАНОВКОЙ</span><div class="aside-step"><span>01</span><p data-i18n="step1">Проверь, опубликован ли релиз на GitHub.</p></div><div class="aside-step"><span>02</span><p data-i18n="step2">Прочитай примечания и ограничения версии.</p></div><div class="aside-step"><span>03</span><p data-i18n="step3">Сверь SHA-256 и сохрани резервные копии.</p></div></aside></div>
+      <div class="note-line reveal"><span>!</span><p data-i18n="legalNote">Независимый некоммерческий фанатский проект. Не связан с Hasbro, Takara Tomy или правообладателями Transformers.</p></div>
+    </div></section>
+
+    <section class="section faq-section" id="faq"><div class="container faq-grid"><div class="faq-intro reveal"><p class="section-kicker"><span>05</span> / FAQ</p><h2 data-i18n="faqTitle">ВАЖНО <em>ЗНАТЬ.</em></h2><p data-i18n="faqIntro">Коротко о доступности игры и дальнейших шагах.</p></div><div class="faq-items reveal">
+      <details><summary><span data-i18n="faq1q">Можно ли уже играть онлайн?</span><span class="faq-toggle">+</span></summary><p data-i18n="faq1a">Пока нет подтверждённого публичного мультиплеерного релиза. Существуют исследовательские и локальные тестовые сборки; это не означает, что игра готова для всех.</p></details>
+      <details><summary><span data-i18n="faq2q">Где скачать клиент?</span><span class="faq-toggle">+</span></summary><p data-i18n="faq2a">Когда доступная для распространения сборка появится, она будет объявлена через GitHub Releases. Исходные игровые EXE и PAK здесь не распространяются.</p></details>
+      <details><summary><span data-i18n="faq3q">Есть ли русский и английский языки?</span><span class="faq-toggle">+</span></summary><p data-i18n="faq3a">В проекте ведётся работа над RU/EN-локализацией интерфейса, однако полное покрытие оригинального клиента пока не подтверждено. Сам сайт доступен на двух языках.</p></details>
+      <details><summary><span data-i18n="faq4q">Как помочь проекту?</span><span class="faq-toggle">+</span></summary><p data-i18n="faq4a">Изучить репозиторий, сообщить о воспроизводимых ошибках через Issues, помочь с документацией и тестированием. Не публикуйте чужие игровые файлы, учётные данные или базы.</p></details>
+    </div></div></section>
+  </main>
+  <footer class="footer"><div class="container"><div class="footer-top"><a class="brand brand-footer" href="#top"><span class="brand-mark"><span>R</span></span><span class="brand-copy"><strong>REACTIVATE<span>TFOL</span></strong><small>TRANSFORMERS ONLINE · COMMUNITY PROJECT</small></span></a><p data-i18n="footerText">Сохраняем память о Transformers Online.<br>Восстанавливаем то, что возможно.</p><a class="footer-to-top" href="#top" aria-label="Back to top">↑</a></div><div class="footer-bottom"><span>© <span id="year">2026</span> REACTIVATE TFOL · COMMUNITY PROJECT</span><div><a href="https://github.com/Ehynia/Reactivate_TFOL" target="_blank" rel="noopener noreferrer">GITHUB ↗</a><a href="https://github.com/Ehynia/Reactivate_TFOL/issues" target="_blank" rel="noopener noreferrer">ISSUES ↗</a><a href="https://github.com/Ehynia/Reactivate_TFOL/releases" target="_blank" rel="noopener noreferrer">RELEASES ↗</a></div></div></div></footer>
+</body></html>

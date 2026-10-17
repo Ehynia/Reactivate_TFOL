@@ -1,10 +1,17 @@
 --- a/Release/Server/economy.py
 +++ b/Release/Server/economy.py
-@@
+@@ -101,8 +101,19 @@
+         result.append(dict(Id=100000+r['resource_id'],SortId=index,Category=2,Index=r['resource_id'],Count=1,
+             Discount=100,PaymentOne=3,PriceOne=POLICY['weapon_silver'],PaymentTwo=currency,
+             PriceTwo=POLICY['weapon_gold'] if currency==2 else POLICY['weapon_coupons'],Tab=3,Leaf=0,Len=0,PicUrl=[]))
 -    for index,skin in enumerate(garage.RESOURCES['skins'],len(result)):
 -        result.append(dict(Id=200000000+skin['category']*10000000+skin['resource_id'],SortId=index,Category=skin['category'],Index=skin['resource_id'],Count=1,Discount=100,PaymentOne=3,PriceOne=POLICY['skin_silver'],PaymentTwo=6,PriceTwo=POLICY['skin_tickets'],Tab=3,Leaf=0))
-+    # Never advertise skins whose original base item is absent or of the
-+    # wrong kind. Such offers always fail with invalidItemId during buy.
++    # The extracted skin table contains *orphan* skins whose base hero or
++    # weapon is absent from our verified catalog.  Advertising those offers
++    # made the genuine ShoppingReq fail with invalidItemId, even when the
++    # player owned every available base item and could afford the skin.
++    # Never assign an orphan to a guessed base: that would yield a broken
++    # equip and potentially make an unrelated character use its blueprint.
 +    sources={r['resource_id']:r['kind'] for r in garage.RESOURCES['catalog']}
 +    for skin in garage.RESOURCES['skins']:
 +        expected=('character' if skin['category']==10 else ('main_weapon','melee_weapon'))
@@ -12,10 +19,18 @@
 +        if actual not in ((expected,) if isinstance(expected,str) else expected):
 +            continue
 +        result.append(dict(Id=200000000+skin['category']*10000000+skin['resource_id'],SortId=len(result),Category=skin['category'],Index=skin['resource_id'],Count=1,Discount=100,PaymentOne=3,PriceOne=POLICY['skin_silver'],PaymentTwo=6,PriceTwo=POLICY['skin_tickets'],Tab=3,Leaf=0))
+     return result
+ 
+ class PurchaseError(ValueError):pass
 --- a/Release/Server/round_end_ui45.h
 +++ b/Release/Server/round_end_ui45.h
-@@
+@@ -53,6 +53,9 @@
+         :::"memory");
+ }
  #else
-+/* stop_worker() also resets this field when built for LOCAL_HOST_TEST. */
++/* The host C transport harness also calls stop_worker(), which resets this
++ * de-duplication state. Keep the declaration in both compilation modes. */
 +static U ui_end_sent_sequence;
  static void round_end_ui_report45(U outcome){(void)outcome;}
+ static void round_end_ui_banner_hook45(void){}
+ #endif

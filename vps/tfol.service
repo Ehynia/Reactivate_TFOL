@@ -1,0 +1,21 @@
+[Unit]
+Description=Reactivate TFOL hosted preparation (loopback only)
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=simple
+User=tfol
+Group=tfol
+WorkingDirectory=/opt/reactivate-tfol/server
+ExecStart=/usr/bin/python3 -u /opt/reactivate-tfol/server/server.py --config /etc/reactivate-tfol/config.json --data /var/lib/reactivate-tfol
+Environment=PYTHONDONTWRITEBYTECODE=1
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/reactivate-tfol
+UMask=0077
+[Install]
+WantedBy=multi-user.target

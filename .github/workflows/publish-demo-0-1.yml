@@ -1,0 +1,102 @@
+name: Publish Reactivate Demo 0.1
+on:
+  push:
+    branches: [demo-0.1-staging]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reassemble and validate portable demo
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, pathlib, zipfile
+          src=pathlib.Path('release-staging')
+          parts=sorted(src.glob('demo01_gitpart_*.zip'))
+          assert len(parts)==32, 'Missing release fragments'
+          target=pathlib.Path('dist/Reactivate_TFOL_Demo_0_1_Start_Game.zip')
+          target.parent.mkdir(parents=True,exist_ok=True)
+          with target.open('wb') as out:
+              for i,part in enumerate(parts):
+                  with zipfile.ZipFile(part) as z:
+                      assert z.namelist()==['chunk_%02d.bin'%i],part
+                      out.write(z.read('chunk_%02d.bin'%i))
+          sha=hashlib.sha256(target.read_bytes()).hexdigest()
+          assert sha=='5ac3a14b268876622bc79f48aefa5fa2b2947853ea64aba5aaa682be1e11e25d', sha
+          with zipfile.ZipFile(target) as z:
+              assert z.testzip() is None
+              names=set(z.namelist())
+              assert {'Release/Start Game.exe','Release/Reactivate.exe',
+                      'Release/Server/launcher_entry.py',
+                      'Release/Server/LauncherSource/ReactivateStandalone.cs',
+                      'Release/Server/ClientUpdate/TFOL_OBT.exe'}<=names
+              entry=z.read('Release/Start Game.exe')
+              assert entry==z.read('Release/Reactivate.exe')
+              assert 'Reactivate.UI.v57.exe'.encode('utf-16le') in entry
+              assert 'Reactivate.UI.v21.exe'.encode('utf-16le') not in entry
+              assert 'ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072' in z.read('Release/Server/LauncherSource/ReactivateStandalone.cs').decode()
+              assert not any('/OBT_SERVER_DATA/' in p or p.lower().endswith(('.sqlite','.db','.pem','.key')) for p in names)
+          pathlib.Path(str(target)+'.sha256').write_text(sha+'  '+target.name+'\n')
+          print('Verified archive',target,sha)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demo-package
+          path: |
+            dist/Reactivate_TFOL_Demo_0_1_Start_Game.zip
+            dist/Reactivate_TFOL_Demo_0_1_Start_Game.zip.sha256
+          compression-level: 0
+  windows-compile:
+    runs-on: windows-2022
+    needs: verify
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: demo-package
+          path: dist
+      - name: Compile shipped UI v57 from source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Expand-Archive -Path 'dist/Reactivate_TFOL_Demo_0_1_Start_Game.zip' -DestinationPath 'unpacked' -Force
+          $src = 'unpacked/Release/Server/LauncherSource/ReactivateStandalone.cs'
+          $compiler = Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
+          if (!(Test-Path $compiler)) { throw 'Windows .NET Framework C# compiler missing' }
+          & $compiler /nologo /target:winexe /out:checked-launcher.exe /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Core.dll /r:System.Runtime.Serialization.dll $src
+          if ($LASTEXITCODE -ne 0 -or !(Test-Path checked-launcher.exe)) { throw 'WinForms launcher failed to compile' }
+          Write-Host 'UI v57 compiles successfully on Windows; live gameplay test still required.'
+  publish:
+    runs-on: ubuntu-24.04
+    needs: [verify, windows-compile]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: demo-package
+          path: dist
+      - name: Publish prerelease Demo 0.1 with verified files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > release-notes.md <<'NOTES'
+          Reactivate Transformers Online — **Demo 0.1** (community restoration test).
+
+          - Start with `Release/Start Game.exe` (updated bootstrap compiles UI v57).
+          - Includes the local Test Node, account-registration/read-permission hotfix, TLS 1.2 GitHub check, and cleaned locale resources.
+          - Requires the user's separately installed original TFOL game files; no original PAKs are included.
+          - Preserves existing accounts; **back up OBT_SERVER_DATA before updating**. The launcher never stores the one-time password.
+          - Native OB15 combat statistics, the original tutorial flow, PVE and remote gameplay remain experimental/incomplete.
+          - ZIP verified by SHA-256, safe paths and syntax; UI source compiled on Windows CI.
+          - **Not an end-to-end Windows gameplay guarantee**. Report launcher failures with logs.
+          NOTES
+          gh release view demo-0.1 >/dev/null 2>&1 && { echo "Release already exists; refusing silent overwrite"; exit 1; } || :
+          gh release create demo-0.1 dist/Reactivate_TFOL_Demo_0_1_Start_Game.zip dist/Reactivate_TFOL_Demo_0_1_Start_Game.zip.sha256 --title "Demo 0.1" --notes-file release-notes.md --prerelease --target "${{ github.sha }}"

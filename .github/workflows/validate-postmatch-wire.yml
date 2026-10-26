@@ -1,0 +1,26 @@
+name: Validate postmatch wire adapter
+
+on:
+  push:
+    paths:
+      - 'server/postmatch_wire35.py'
+      - 'server/tests/test_postmatch_wire35.py'
+      - '.github/workflows/validate-postmatch-wire.yml'
+  pull_request:
+    paths:
+      - 'server/postmatch_wire35.py'
+      - 'server/tests/test_postmatch_wire35.py'
+      - '.github/workflows/validate-postmatch-wire.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and adapter-only regression tests
+        run: |
+          python3 -m py_compile server/postmatch_wire35.py server/tests/test_postmatch_wire35.py
+          python3 -m unittest discover -s server/tests -p 'test_postmatch_wire35.py' -v

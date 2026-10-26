@@ -12,10 +12,16 @@ def result_notice(stop, rows, room_sequence=0):
         raise ValueError('Native game result required')
     if type(room_sequence)!=int or room_sequence<0 or room_sequence>=2**63:
         raise ValueError('Invalid room sequence')
-    if stop.get('WinTeamId') not in (0,1,255,-1) or not 1<=stop.get('TimeConsume',0)<=86400:
+    winner = stop.get('WinTeamId')
+    duration = stop.get('TimeConsume')
+    # bool compares equal to 0/1 in Python; these native fields must be integers.
+    if type(winner) is not int or winner not in (0, 1, 255, -1):
         raise ValueError('Result has no validated end time/outcome')
-    if any(not isinstance(row,dict) or not row.get('Name') for row in rows):
-        raise ValueError('Invalid original scoreboard')
+    if type(duration) is not int or not 1 <= duration <= 86400:
+        raise ValueError('Result has no validated end time/outcome')
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get('Name'), str) or not row['Name'].strip():
+            raise ValueError('Invalid original scoreboard')
     value=dict(RoomSeq=room_sequence, BattleInfo=stop, Count=len(rows),
                AccBattleInfo=rows, ItemCount=0, ItemInfo=[],
                ActivityItemCount=0, ActivityItemList=[],
@@ -27,6 +33,10 @@ def result_notice(stop, rows, room_sequence=0):
     frames=packets(encoded)
     if len(frames)!=1 or frames[0][0]!=COMMAND:raise ValueError('Invalid result framing')
     view=decode_all(SCHEMA,frames[0][1])
-    if view['Count']!=len(rows) or view['BattleInfo']['TimeConsume']!=stop['TimeConsume']:
+    if (not isinstance(view, dict) or type(view.get('Count')) is not int
+            or view['Count'] != len(rows)
+            or not isinstance(view.get('BattleInfo'), dict)
+            or view['BattleInfo'].get('TimeConsume') != duration
+            or view['BattleInfo'].get('WinTeamId') != winner):
         raise ValueError('Native result wire mismatch')
     return encoded

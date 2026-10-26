@@ -102,7 +102,6 @@ new_server_installed=1
 mv -- "$stage/server" "$APP/server"
 install -m 0644 "$stage/deploy/tfol.service" "$unit_path"
 chown -R root:root "$APP/server";chmod -R go-w "$APP/server"
-[[ -z $TAG ]] || printf '%s\n' "$TAG" > "$APP/installed_tag"
 systemctl daemon-reload
 systemctl enable --now tfol-server.service
 ready=0
@@ -114,5 +113,6 @@ if [[ $ready != 1 ]];then
  echo 'Health check failed; previous service will be restored' >&2
  exit 1
 fi
+[[ -z $TAG ]] || printf '%s\n' "$TAG" > "$APP/installed_tag"
 rollback_pending=0
 echo 'Server healthy at 127.0.0.1; hosted preparation only, not public gameplay.'

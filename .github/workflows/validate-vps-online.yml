@@ -44,6 +44,8 @@ jobs:
               assert {'server/server.py','server/runtime_config.py','deploy/tfol.service'}<=entries
           print('Package and SHA256 verified')
           PY
+      - name: Installer rollback and concurrency regression (isolated runner)
+        run: sudo bash vps/test-installer-rollback.sh
       - name: Hosted preparation smoke test (no public ports)
         run: |
           mkdir -p /tmp/tfol-smoke

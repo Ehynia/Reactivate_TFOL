@@ -20,8 +20,44 @@ if [[ -n $TAG ]]; then [[ $TAG =~ ^v[0-9][0-9A-Za-z._-]*$ ]] || exit 2; fi
 if command -v apt-get >/dev/null && { ! command -v curl >/dev/null || ! command -v python3 >/dev/null; }; then
  apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 ca-certificates curl
 fi
-for c in curl tar sha256sum python3 systemctl useradd;do command -v "$c" >/dev/null || exit 1;done
-tmp=$(mktemp -d);trap 'rm -rf "$tmp"' EXIT
+for c in curl tar sha256sum python3 systemctl useradd flock;do command -v "$c" >/dev/null || exit 1;done
+mkdir -p "$APP"
+# Serialize updates so simultaneous installers cannot move each other's server trees.
+exec 9>"$APP/.install.lock"
+flock -n 9 || { echo 'Another TFOL installation is in progress' >&2;exit 1; }
+tmp=$(mktemp -d)
+stage=
+previous=
+rollback_pending=0
+new_server_installed=0
+had_unit=0
+was_active=0
+was_enabled=0
+unit_path=/etc/systemd/system/tfol-server.service
+on_exit() {
+ local status=$?
+ trap - EXIT
+ set +e
+ if [[ $status -ne 0 && $rollback_pending == 1 ]]; then
+  echo 'TFOL install failed; restoring previous service and code...' >&2
+  systemctl stop tfol-server.service >/dev/null 2>&1 || :
+  if [[ $new_server_installed == 1 ]]; then rm -rf -- "$APP/server"; fi
+  if [[ -n $previous && -d $previous ]]; then mv -- "$previous" "$APP/server" || echo 'WARNING: server restore failed' >&2; fi
+  if [[ $had_unit == 1 ]]; then
+   cp -p -- "$tmp/previous-tfol.service" "$unit_path" || echo 'WARNING: unit restore failed' >&2
+  else
+   rm -f -- "$unit_path"
+  fi
+  systemctl daemon-reload >/dev/null 2>&1 || :
+  if [[ $was_enabled == 1 ]]; then systemctl enable tfol-server.service >/dev/null 2>&1 || :
+  else systemctl disable tfol-server.service >/dev/null 2>&1 || :; fi
+  if [[ $was_active == 1 ]]; then systemctl start tfol-server.service || echo 'WARNING: previous service did not restart' >&2; fi
+ fi
+ if [[ -n $stage ]]; then rm -rf -- "$stage"; fi
+ rm -rf -- "$tmp"
+ exit "$status"
+}
+trap on_exit EXIT
 if [[ -n $TAG ]]; then
  base="https://github.com/$REPO/releases/download/$TAG/$ASSET"
  curl --proto '=https' --tlsv1.2 -fLSs --retry 3 --max-time 240 -o "$tmp/$ASSET" "$base"
@@ -41,7 +77,6 @@ with tarfile.open(sys.argv[1],'r:gz') as t:
   names.add(m.name)
  if not {'server/server.py','server/runtime_config.py','deploy/tfol.service'}<=names:raise SystemExit('Missing files')
 PY
-mkdir -p "$APP"
 stage=$(mktemp -d "$APP/.stage.XXXXXXXX")
 tar -xzf "$ARCHIVE" -C "$stage" --no-same-owner --no-same-permissions
 id tfol >/dev/null 2>&1 || useradd --system --home-dir "$STATE" --shell /usr/sbin/nologin tfol
@@ -51,13 +86,22 @@ if [[ ! -f "$CONF/config.json" ]];then
  printf '%s\n' '{"mode":"hosted-preparation","require_account_keys":true,"capture_packets":false,"api_port":28000,"tcp_port":28080,"local_test_matches":false,"reddit_news_enabled":false,"enable_local_banner_xp":false}' > "$CONF/config.json"
  chown root:tfol "$CONF/config.json";chmod 0640 "$CONF/config.json"
 fi
+# Snapshot service state before changing either the code or the unit.
+if [[ -f $unit_path ]]; then cp -p -- "$unit_path" "$tmp/previous-tfol.service"; had_unit=1; fi
+if systemctl is-active --quiet tfol-server.service; then was_active=1; fi
+if systemctl is-enabled --quiet tfol-server.service; then was_enabled=1; fi
+rollback_pending=1
 systemctl stop tfol-server.service 2>/dev/null || :
-previous=
-if [[ -d "$APP/server" ]];then previous="$APP/.previous-$(date -u +%Y%m%dT%H%M%S)";mv "$APP/server" "$previous";fi
-mv "$stage/server" "$APP/server"
-install -m 0644 "$stage/deploy/tfol.service" /etc/systemd/system/tfol-server.service
+if [[ -d "$APP/server" ]];then
+ previous=$(mktemp -d "$APP/.previous.XXXXXXXX")
+ rmdir -- "$previous"
+ mv -- "$APP/server" "$previous"
+fi
+# Set before the move so a partially copied replacement is also cleaned up on failure.
+new_server_installed=1
+mv -- "$stage/server" "$APP/server"
+install -m 0644 "$stage/deploy/tfol.service" "$unit_path"
 chown -R root:root "$APP/server";chmod -R go-w "$APP/server"
-[[ -z $TAG ]] || printf '%s\n' "$TAG" > "$APP/installed_tag"
 systemctl daemon-reload
 systemctl enable --now tfol-server.service
 ready=0
@@ -66,9 +110,9 @@ for i in $(seq 1 20);do
  sleep 1
 done
 if [[ $ready != 1 ]];then
- systemctl stop tfol-server.service || :
- rm -rf "$APP/server"
- if [[ -n $previous ]];then mv "$previous" "$APP/server";systemctl start tfol-server.service || :;fi
- echo 'Health check failed; source rolled back' >&2;exit 1
+ echo 'Health check failed; previous service will be restored' >&2
+ exit 1
 fi
+[[ -z $TAG ]] || printf '%s\n' "$TAG" > "$APP/installed_tag"
+rollback_pending=0
 echo 'Server healthy at 127.0.0.1; hosted preparation only, not public gameplay.'
